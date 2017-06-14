@@ -19,6 +19,11 @@ type dhcpProtocol struct {
 }
 
 func (d *dhcpProtocol) Configure(mgr NetworkManager, inf string) error {
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown"
+	}
+
 	cmd := &core.Command{
 		ID:      uuid.New(),
 		Command: process.CommandSystem,
@@ -31,6 +36,7 @@ func (d *dhcpProtocol) Configure(mgr NetworkManager, inf string) error {
 					"-t", "10", //try 10 times before giving up
 					"-A", "3", //wait 3 seconds between each trial
 					"--now", //exit if failed after consuming all the trials (otherwise stay alive)
+					"-x", "hostname:" + hostname, //send our hostname on the request
 					"-s", "/usr/share/udhcp/simple.script"},
 			},
 		),
