@@ -1,6 +1,7 @@
 package network
 
 import (
+	"os"
 	"github.com/pborman/uuid"
 	"github.com/zero-os/0-core/base/pm"
 	"github.com/zero-os/0-core/base/pm/core"
@@ -42,7 +43,7 @@ func (d *dhcpProtocol) Configure(mgr NetworkManager, inf string) error {
 		),
 	}
 
-	_, err := pm.GetManager().RunCmd(cmd)
+	_, err = pm.GetManager().RunCmd(cmd)
 
 	return err
 }
