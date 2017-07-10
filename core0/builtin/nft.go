@@ -98,8 +98,11 @@ func (b *nftMgr) openPort(cmd *core.Command) (interface{}, error) {
 			},
 		},
 	}
-
-	return nil, nft.Apply(n)
+	if err := nft.Apply(n); err != nil {
+		delete(b.rules, rule)
+		return nil, nft.Apply(n)
+	}
+	return nil, nil
 }
 
 func (b *nftMgr) dropPort(cmd *core.Command) (interface{}, error) {
