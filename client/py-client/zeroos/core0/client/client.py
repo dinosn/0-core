@@ -2471,6 +2471,36 @@ class Client(BaseClient):
                     return
             raise RuntimeError("Could not connect to remote host %s" % host)
 
+    def app(self, flist, command, dir='', stdin='', env=None, storage=None):
+        """
+        Run a binary from an flist
+        
+        :param flist: url to flist
+        :param command: command to run (relative path from flist root)
+        :param dir: working directory
+        :param stdin: optional data to work as stdin to command
+        :param env: env variables
+        :param storage: flist storage, otherwise use the one from zero-os config
+        :return: Job object for command
+        """
+        parts = shlex.split(command)
+        if len(parts) == 0:
+            raise ValueError('invalid command')
+
+        args = {
+            'flist': flist,
+            'storage': storage,
+            'command': {
+                'name': parts[0],
+                'args': parts[1:],
+                'dir': dir,
+                'stdin': stdin,
+                'env': env,
+            }
+        }
+
+        return self.response_for(self.json('core.app', args))
+
     @property
     def container(self):
         """
