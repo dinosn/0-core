@@ -24,12 +24,14 @@ type appMgr struct {
 	sink *transport.Sink
 }
 
-func AppsSubsystem(sink *transport.Sink) {
+func AppsSubsystem(sink *transport.Sink) error {
 	mgr := &appMgr{
 		sink: sink,
 	}
 
 	pm.CmdMap["core.app"] = process.NewInternalProcessFactory(mgr.app)
+
+	return nil
 }
 
 func (a *appMgr) app(cmd *core.Command) (interface{}, error) {
@@ -58,7 +60,6 @@ func (a *appMgr) app(cmd *core.Command) (interface{}, error) {
 	args.Command.Name = path.Join(target, strings.TrimRight(args.Command.Name, "/"))
 
 	a.sink.Flag(job)
-	pm.GetManager().PushCmd()
 	_, err := pm.GetManager().RunCmd(
 		&core.Command{
 			ID:        job,
