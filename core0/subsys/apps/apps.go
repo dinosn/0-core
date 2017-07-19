@@ -1,9 +1,9 @@
 package apps
 
 import (
-	"code.google.com/p/go-uuid/uuid"
 	"encoding/json"
 	"fmt"
+	"github.com/pborman/uuid"
 	"github.com/zero-os/0-core/base/g8ufs"
 	"github.com/zero-os/0-core/base/pm"
 	"github.com/zero-os/0-core/base/pm/core"
