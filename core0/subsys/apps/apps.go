@@ -38,6 +38,7 @@ func (a *appMgr) app(cmd *core.Command) (interface{}, error) {
 	var args struct {
 		FList   string                         `json:"flist"`
 		Storage string                         `json:"storage"`
+		ID      string                         `json:"id"`
 		Command process.SystemCommandArguments `json:"command"`
 	}
 
@@ -55,10 +56,13 @@ func (a *appMgr) app(cmd *core.Command) (interface{}, error) {
 	}
 
 	//start the actual command
-	job := uuid.New()
+	job := args.ID
+	if len(job) == 0 {
+		job = uuid.New()
+	}
+
 	//rewrite path to binary
 	args.Command.Name = path.Join(target, strings.TrimRight(args.Command.Name, "/"))
-
 	a.sink.Flag(job)
 	_, err := pm.GetManager().RunCmd(
 		&core.Command{

@@ -611,13 +611,15 @@ class FilesystemManager:
 
 
 class BaseClient:
-    _system_chk = typchk.Checker({
+    _system = {
         'name': str,
         'args': [str],
         'dir': str,
         'stdin': str,
         'env': typchk.Or(typchk.Map(str, str), typchk.IsNone()),
-    })
+    }
+
+    _system_chk = typchk.Checker(_system)
 
     _bash_chk = typchk.Checker({
         'stdin': str,
@@ -2436,6 +2438,13 @@ class Client(BaseClient):
         'tags': typchk.Or([str], typchk.IsNone()),
     })
 
+    _app_chk = typchk.Checker({
+        'flist': str,
+        'storage': typchk.Or(str, typchk.IsNone()),
+        'id': typchk.Or(str, typchk.IsNone()),
+        'command': BaseClient._system,
+    })
+
     def __init__(self, host, port=6379, password="", db=0, ssl=True, timeout=None, testConnectionAttempts=3):
         super().__init__(timeout=timeout)
 
@@ -2471,7 +2480,7 @@ class Client(BaseClient):
                     return
             raise RuntimeError("Could not connect to remote host %s" % host)
 
-    def app(self, flist, command, dir='', stdin='', env=None, storage=None):
+    def app(self, flist, command, dir='', stdin='', env=None, storage=None, id=None):
         """
         Run a binary from an flist
         
@@ -2490,6 +2499,7 @@ class Client(BaseClient):
         args = {
             'flist': flist,
             'storage': storage,
+            'id': id,
             'command': {
                 'name': parts[0],
                 'args': parts[1:],
@@ -2499,6 +2509,7 @@ class Client(BaseClient):
             }
         }
 
+        self._app_chk.check(args)
         return self.response_for(self.json('core.app', args))
 
     @property
