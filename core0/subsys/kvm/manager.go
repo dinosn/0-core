@@ -160,15 +160,31 @@ type Nic struct {
 
 type CreateParams struct {
 	Name   string      `json:"name"`
-	CPU    int         `json:"cpu"`
-	Memory int         `json:"memory"`
-	Media  []Media     `json:"media"`
+	CPU    int         `json:"cpu,omitempty"`
+	Memory int         `json:"memory,omitempty"`
+	Media  []Media     `json:"media,omitempty"`
 	Nics   []Nic       `json:"nics"`
 	Port   map[int]int `json:"port"`
-	Tags   core.Tags   `json:"tags"`
+	Tags   core.Tags   `json:"tags,omitempty"`
 }
 
 func (c *CreateParams) Valid() error {
+	if err := c.ValidNics(); err != nil {
+		return err
+	}
+	if len(c.Media) < 1 {
+		return fmt.Errorf("At least a boot disk has to be provided")
+	}
+	if c.CPU == 0 {
+		return fmt.Errorf("CPU is a required parameter")
+	}
+	if c.Memory == 0 {
+		return fmt.Errorf("Memory is a required parameter")
+	}
+	return nil
+}
+
+func (c *CreateParams) ValidNics() error {
 	brcounter := make(map[string]int)
 	for _, nic := range c.Nics {
 		switch nic.Type {
@@ -190,9 +206,6 @@ func (c *CreateParams) Valid() error {
 		default:
 			return fmt.Errorf("invalid nic type '%s'", nic.Type)
 		}
-	}
-	if len(c.Media) < 1 {
-		return fmt.Errorf("At least a boot disk has to be provided")
 	}
 	return nil
 }
@@ -797,10 +810,8 @@ func (m *kvmManager) prepareMigrationTarget(cmd *core.Command) (interface{}, err
 	}
 
 	params.Tags = cmd.Tags
-	if err := params.Valid(); err != nil {
-		return nil, err
-	}
 
+	params.ValidNics()
 	seq := m.getNextSequence()
 
 	domain, err := m.mkDomain(seq, &params)

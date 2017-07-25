@@ -1967,6 +1967,19 @@ class KvmManager:
         ),
     })
 
+    _migrate_network_chk = typchk.Checker({
+        'name': str,
+        'nics': [{
+            'type': typchk.Enum('default', 'bridge', 'vxlan', 'vlan'),
+            'id': typchk.Or(str, typchk.Missing()),
+            'hwaddr': typchk.Or(str, typchk.Missing()),
+        }],
+        'port': typchk.Or(
+            typchk.Map(int, int),
+            typchk.IsNone()
+        ),
+    })
+
     _domain_action_chk = typchk.Checker({
         'uuid': str,
     })
@@ -2036,14 +2049,9 @@ class KvmManager:
 
         return self._client.sync('kvm.create', args, tags=tags)
 
-    def prepare_migration_target(self, name, media, cpu=2, memory=512, nics=None, port=None, tags=None):
+    def prepare_migration_target(self, name, nics=None, port=None, tags=None):
         """
         :param name: Name of the kvm domain that will be migrated 
-        :param media: array of media objects to attach to the machine, where the first object is the boot device
-                      each media object is a dict of {url, type} where type can be one of 'disk', or 'cdrom', or empty (default to disk)
-                      example: [{'url': 'nbd+unix:///test?socket=/tmp/ndb.socket'}, {'type': 'cdrom': '/somefile.iso'}
-        :param cpu: number of vcpu cores
-        :param memory: memory in MiB
         :param port: A dict of host_port: container_port pairs
                        Example:
                         `port={8080: 80, 7000:7000}`
@@ -2062,13 +2070,10 @@ class KvmManager:
 
         args = {
             'name': name,
-            'media': media,
-            'cpu': cpu,
-            'memory': memory,
             'nics': nics,
             'port': port,
         }
-        self._create_chk.check(args)
+        self._migrate_network_chk.check(args)
 
         self._client.sync('kvm.prepare_migration_target', args, tags=tags)
 
