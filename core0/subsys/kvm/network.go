@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/zero-os/0-core/base/pm"
-	"github.com/zero-os/0-core/base/pm/core"
-	"github.com/libvirt/libvirt-go"
-	"github.com/pborman/uuid"
-	"github.com/vishvananda/netlink"
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/libvirt/libvirt-go"
+	"github.com/pborman/uuid"
+	"github.com/vishvananda/netlink"
+	"github.com/zero-os/0-core/base/pm"
+	"github.com/zero-os/0-core/base/pm/core"
 )
 
 const (
@@ -50,10 +51,10 @@ func (m *kvmManager) setNetworking(args *CreateParams, seq uint16, domain *Domai
 		err error
 	)
 
-	for _, nic := range args.Nics {
+	for _, nic := range args.Network.Nics {
 		switch nic.Type {
 		case "default":
-			inf, err = m.prepareDefaultNetwork(domain.UUID, seq, args.Port)
+			inf, err = m.prepareDefaultNetwork(domain.UUID, seq, args.Network.Port)
 		case "bridge":
 			inf, err = m.prepareBridgeNetwork(&nic)
 		case "vlan":

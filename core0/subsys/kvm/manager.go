@@ -157,19 +157,21 @@ type Nic struct {
 	ID        string `json:"id"`
 	HWAddress string `json:"hwaddr"`
 }
-
+type NicParams struct {
+	Nics []Nic       `json:"nics"`
+	Port map[int]int `json:"port"`
+}
 type CreateParams struct {
-	Name   string      `json:"name"`
-	CPU    int         `json:"cpu,omitempty"`
-	Memory int         `json:"memory,omitempty"`
-	Media  []Media     `json:"media,omitempty"`
-	Nics   []Nic       `json:"nics"`
-	Port   map[int]int `json:"port"`
-	Tags   core.Tags   `json:"tags,omitempty"`
+	Network NicParams
+	Name    string    `json:"name"`
+	CPU     int       `json:"cpu"`
+	Memory  int       `json:"memory"`
+	Media   []Media   `json:"media"`
+	Tags    core.Tags `json:"tags"`
 }
 
 func (c *CreateParams) Valid() error {
-	if err := c.ValidNics(); err != nil {
+	if err := c.Network.ValidNics(); err != nil {
 		return err
 	}
 	if len(c.Media) < 1 {
@@ -184,7 +186,7 @@ func (c *CreateParams) Valid() error {
 	return nil
 }
 
-func (c *CreateParams) ValidNics() error {
+func (c *NicParams) ValidNics() error {
 	brcounter := make(map[string]int)
 	for _, nic := range c.Nics {
 		switch nic.Type {
@@ -804,22 +806,24 @@ func (m *kvmManager) create(cmd *core.Command) (interface{}, error) {
 
 func (m *kvmManager) prepareMigrationTarget(cmd *core.Command) (interface{}, error) {
 	defer m.updateView()
-	var params CreateParams
-	if err := json.Unmarshal(*cmd.Arguments, &params); err != nil {
+	var netparams NicParams
+	var vmparams CreateParams
+	if err := json.Unmarshal(*cmd.Arguments, &netparams); err != nil {
 		return nil, err
 	}
 
-	params.Tags = cmd.Tags
-
-	params.ValidNics()
+	if err := netparams.ValidNics(); err != nil {
+		return nil, err
+	}
 	seq := m.getNextSequence()
 
-	domain, err := m.mkDomain(seq, &params)
+	vmparams.Network = netparams
+	domain, err := m.mkDomain(seq, &vmparams)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := m.setNetworking(&params, seq, domain); err != nil {
+	if err := m.setNetworking(&vmparams, seq, domain); err != nil {
 		return nil, err
 	}
 	return nil, nil
