@@ -162,16 +162,16 @@ type NicParams struct {
 	Port map[int]int `json:"port"`
 }
 type CreateParams struct {
-	Network NicParams
-	Name    string    `json:"name"`
-	CPU     int       `json:"cpu"`
-	Memory  int       `json:"memory"`
-	Media   []Media   `json:"media"`
-	Tags    core.Tags `json:"tags"`
+	NicParams
+	Name   string    `json:"name"`
+	CPU    int       `json:"cpu"`
+	Memory int       `json:"memory"`
+	Media  []Media   `json:"media"`
+	Tags   core.Tags `json:"tags"`
 }
 
 func (c *CreateParams) Valid() error {
-	if err := c.Network.ValidNics(); err != nil {
+	if err := c.NicParams.Valid(); err != nil {
 		return err
 	}
 	if len(c.Media) < 1 {
@@ -186,7 +186,7 @@ func (c *CreateParams) Valid() error {
 	return nil
 }
 
-func (c *NicParams) ValidNics() error {
+func (c *NicParams) Valid() error {
 	brcounter := make(map[string]int)
 	for _, nic := range c.Nics {
 		switch nic.Type {
@@ -761,7 +761,7 @@ func (m *kvmManager) create(cmd *core.Command) (interface{}, error) {
 		return nil, err
 	}
 
-	if err := m.setNetworking(&params, seq, domain); err != nil {
+	if err := m.setNetworking(&params.NicParams, seq, domain); err != nil {
 		return nil, err
 	}
 
@@ -806,24 +806,23 @@ func (m *kvmManager) create(cmd *core.Command) (interface{}, error) {
 
 func (m *kvmManager) prepareMigrationTarget(cmd *core.Command) (interface{}, error) {
 	defer m.updateView()
-	var netparams NicParams
-	var vmparams CreateParams
-	if err := json.Unmarshal(*cmd.Arguments, &netparams); err != nil {
+	var params struct {
+		NicParams
+		UUID string `json:"uuid"`
+	}
+
+	if err := json.Unmarshal(*cmd.Arguments, &params); err != nil {
 		return nil, err
 	}
 
-	if err := netparams.ValidNics(); err != nil {
+	var domain Domain
+	domain.UUID = params.UUID
+	if err := params.NicParams.Valid(); err != nil {
 		return nil, err
 	}
+
 	seq := m.getNextSequence()
-
-	vmparams.Network = netparams
-	domain, err := m.mkDomain(seq, &vmparams)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := m.setNetworking(&vmparams, seq, domain); err != nil {
+	if err := m.setNetworking(&params.NicParams, seq, &domain); err != nil {
 		return nil, err
 	}
 	return nil, nil

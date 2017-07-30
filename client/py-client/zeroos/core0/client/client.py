@@ -1978,6 +1978,7 @@ class KvmManager:
             typchk.Map(int, int),
             typchk.IsNone()
         ),
+        'uuid': str
     })
 
     _domain_action_chk = typchk.Checker({
@@ -2049,7 +2050,7 @@ class KvmManager:
 
         return self._client.sync('kvm.create', args, tags=tags)
 
-    def prepare_migration_target(self, name, nics=None, port=None, tags=None):
+    def prepare_migration_target(self, uuid, nics=None, port=None, tags=None):
         """
         :param name: Name of the kvm domain that will be migrated 
         :param port: A dict of host_port: container_port pairs
@@ -2062,6 +2063,7 @@ class KvmManager:
                         'type': nic_type # default, bridge, vlan, or vxlan (note, vlan and vxlan only supported by ovs)
                         'id': id # depends on the type, bridge name (bridge type) zerotier network id (zertier type), the vlan tag or the vxlan id
                      }
+        :param uuid: uuid of machine to be migrated on old node
         :return:
         """
 
@@ -2069,9 +2071,9 @@ class KvmManager:
             nics = []
 
         args = {
-            'name': name,
             'nics': nics,
             'port': port,
+            'uuid': uuid
         }
         self._migrate_network_chk.check(args)
 

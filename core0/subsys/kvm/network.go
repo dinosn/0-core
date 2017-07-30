@@ -45,16 +45,16 @@ func (m *kvmManager) setVirtNetwork(network Network) error {
 	return nil
 }
 
-func (m *kvmManager) setNetworking(args *CreateParams, seq uint16, domain *Domain) error {
+func (m *kvmManager) setNetworking(args *NicParams, seq uint16, domain *Domain) error {
 	var (
 		inf *InterfaceDevice
 		err error
 	)
 
-	for _, nic := range args.Network.Nics {
+	for _, nic := range args.Nics {
 		switch nic.Type {
 		case "default":
-			inf, err = m.prepareDefaultNetwork(domain.UUID, seq, args.Network.Port)
+			inf, err = m.prepareDefaultNetwork(domain.UUID, seq, args.Port)
 		case "bridge":
 			inf, err = m.prepareBridgeNetwork(&nic)
 		case "vlan":
